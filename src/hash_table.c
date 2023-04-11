@@ -41,6 +41,30 @@ unsigned int hash_function(const char* key)
 }
 
 
+// Create the hash table.
+HashTable* create_hash_table()
+{
+    // Allocate memory for the HashTable struct.
+    HashTable* hashtable = malloc(sizeof(HashTable));
+
+    // Set the table size based on the globally defined table size.
+    hashtable->size = TABLE_SIZE;
+
+    // Allocate memory for the array of entries (size of 1 entry × number of entries).
+    // Entries is an array of pointers to individual entries.
+    hashtable->entries = malloc(hashtable->size * sizeof(Entry));
+
+    // Set each entry to NULL.
+    for (int i = 0; i < hashtable->size; i++) {
+        hashtable->entries[i] = NULL;
+    }
+
+    // Return the pointer to the hashtable.
+    return hashtable;
+}
+
+
+
 // Creating an entry.
 Entry* create_entry(const char* key, const char* value)
 {
