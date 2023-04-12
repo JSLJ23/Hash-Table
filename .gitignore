@@ -55,3 +55,8 @@ dkms.conf
 # Ignore IDE folders
 .idea
 .vscode
+
+
+# Debugging and scratch files
+**/*scratch*
+**/*debug*
