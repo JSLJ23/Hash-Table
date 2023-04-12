@@ -84,7 +84,46 @@ Entry* create_entry(const char* key, const char* value)
 }
 
 
-// Add an entry.
+// Add an entry (with key value pairs).
+// The entry is created internally in this function so the user doesn't need to call the
+// create_entry() function explicitly.
+void hash_table_set_entry(HashTable* hashtable, const char* key, const char* value)
+{
+    // Create an entry
+    Entry* entry = create_entry(key, value);
+
+    // Get the hash of that entry's key
+    unsigned int hash_value = hash_function(key);
+
+    // With that hash, get the current contents of that slot in the hash table.
+    Entry* current_entry = hashtable->entries[hash_value];
+
+    // If that slot is not taken, i.e. the entry there is NULL, insert this current entry there.
+    if (current_entry == NULL) {
+        hashtable->entries[hash_value] = entry;
+        return;
+    }
+
+    // If there is already an entry there, we need to check if the string values of the keys are a
+    // match, if so we need to override that value. If not, we add the new entry to the end of the
+    // link list.
+    Entry* previous;
+    while (current_entry != NULL) {
+        // If the key already exist, we overwrite the value.
+        if (strcmp(current_entry->key, key) == 0) {
+            free(current_entry->value);
+            current_entry->value = malloc(strlen(value) + 1); // +1 for the null terminator.
+            strcpy(current_entry->value, value);
+            return;
+        }
+        // If not we advance to the next item in the linked list and check the key there.
+        previous      = current_entry;
+        current_entry = previous->next;
+    }
+    // If there are no matches, we add the new entry to the end of the linked list (right before
+    // current_entry == NULL).
+    previous->next = entry;
+}
 
 
 // Lookup an entry.
