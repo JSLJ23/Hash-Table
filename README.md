@@ -5,5 +5,5 @@ A simple hash table implementation in C 😅
 
 ## To compile
 ```bash
-gcc ./src/hash_table.c ./src/main.c -o ./hash_table
+gcc ./src/hash_table.c ./src/main.c -Wall -static -o ./hash_table
 ```
