@@ -20,6 +20,7 @@ typedef struct Entry {
 
 typedef struct HashTable {
     int size;
+    int num_filled_slots;
     struct Entries** entries;
 } HashTable;
 
@@ -46,6 +47,9 @@ HashTable* create_hash_table()
 {
     // Allocate memory for the HashTable struct.
     HashTable* hashtable = malloc(sizeof(HashTable));
+
+    // Set the number of filled slots to zero;
+    hashtable->num_filled_slots = 0;
 
     // Set the table size based on the globally defined table size.
     hashtable->size = TABLE_SIZE;
@@ -101,6 +105,7 @@ void hash_table_set_entry(HashTable* hashtable, const char* key, const char* val
     // If that slot is not taken, i.e. the entry there is NULL, insert this current entry there.
     if (current_entry == NULL) {
         hashtable->entries[hash_value] = entry;
+        hashtable->num_filled_slots++;
         return;
     }
 
@@ -123,13 +128,110 @@ void hash_table_set_entry(HashTable* hashtable, const char* key, const char* val
     // If there are no matches, we add the new entry to the end of the linked list (right before
     // current_entry == NULL).
     previous->next = entry;
+    hashtable->num_filled_slots++;
 }
 
 
 // Lookup an entry.
+void hash_table_get_entry(HashTable* hashtable, const char* key)
+{
+
+    // Get the hash value for this key.
+    unsigned int hash_value = hash_function(key);
+
+    // Get the entry at that hash value.
+    Entry* entry = hashtable->entries[hash_value];
+
+    // If there is no entry at that slot, return NULL.
+    if (entry == NULL)
+        return NULL;
+
+    // If there is an entry at that slot, check the key to see if it matches and do so for all
+    // entries in the linked list. If none of the keys match, return NULL.
+    while (entry != NULL) {
+        // Check if the keys match.
+        if (strcmp(entry->key, key) == 0) {
+            return entry->value;
+        }
+        // Proceed to the next entry of the linked list.
+        entry = entry->next;
+    }
+
+    return NULL;
+}
 
 
-// Deleting an entry.
+// Deleting an entry from the hash table.
+// This function is slightly complex has it has to deal with multiple scenarios but I will try to
+// add as much comments to make it more understandable.
+void hash_table_delete_entry(HashTable* hashtable, const char* key)
+{
+    // Get the hash value for this key.
+    unsigned int hash_value = hash_function(key);
+
+    // Get the entry at that hash value.
+    Entry* entry = hashtable->entries[hash_value];
+
+    // If there is no entry at that slot, return and don't do anything.
+    if (entry == NULL)
+        return;
+
+    // If there is an entry at that slot, check the key to see if it matches and do so for all
+    // entries in the linked list.
+    // We need a temporary pointer to keep track of the previous entry as we progress through this
+    // list.
+    Entry* previous;
+    while (entry != NULL) {
+        // String compare the keys for a lexicographical match.
+        if (strcmp(entry->key, key) == 0) {
+            // There can be 4 main scenarios for trying to delete an entry given an exact key match:
+
+            // 1. The entry is the only entry in the linked list.
+            // 2. The entry is the first entry in the linked list with next entries.
+            // 3. The entry is the last entry in the linked list.
+            // 4. The entry is somewhere in the middle of the linked list.
+
+            // Scenario 1: The entry is the only entry in the linked list.
+            // If this is so, we can just set that entry to NULL and free the memory for this entry.
+            if (previous == NULL && entry->next == NULL) {
+                hashtable->entries[hash_value] = NULL;
+            }
+
+            // Scenario 2: The entry is the first entry in the linked list with other entries that
+            // follow. If this is so, we set the next entry to the current slot for that hash value
+            // and free the memory for this entry.
+            else if (previous == NULL && entry->next != NULL) {
+                hashtable->entries[hash_value] = entry->next;
+            }
+
+            // Scenario 3: The entry is the last entry of the linked list.
+            // If this is so, we set the ->next of the previous entry to null and free the memory
+            // for this entry.
+            else if (previous != NULL && entry->next == NULL) {
+                previous->next = NULL;
+            }
+
+            // Scenario 4: The entry is somewhere in the middle of the linked list.
+            // If this is so, we need to move the current entry's next pointer to the previous
+            // entry's next pointer and essentially skip this current entry, then we free the memory
+            // for this entry.
+            else if (previous != NULL && entry->next != NULL) {
+                previous->next = entry->next;
+            }
+
+            // Free memory for the entry and exit the function.
+            free(entry->key);
+            free(entry->value);
+            free(entry);
+            hashtable->num_filled_slots--;
+            return;
+        }
+
+        // Advance the pointers.
+        previous = entry;
+        entry    = previous->next;
+    }
+}
 
 
 // Display all entries.
