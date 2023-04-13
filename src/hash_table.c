@@ -1,28 +1,16 @@
 #include "hash_table.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 
+#define BLU   "\x1B[34m"
 #define RED   "\x1B[31m"
 #define RESET "\x1B[0m"
 
 
 #define TABLE_SIZE 100000
-
-
-typedef struct Entry {
-    char* key;
-    char* value;
-    struct Entry* next;
-} Entry;
-
-
-typedef struct HashTable {
-    int size;
-    int num_filled_slots;
-    struct Entries** entries;
-} HashTable;
 
 
 // Hash function.
@@ -133,9 +121,8 @@ void hash_table_set_entry(HashTable* hashtable, const char* key, const char* val
 
 
 // Lookup an entry.
-void hash_table_get_entry(HashTable* hashtable, const char* key)
+char* hash_table_get_entry(HashTable* hashtable, const char* key)
 {
-
     // Get the hash value for this key.
     unsigned int hash_value = hash_function(key);
 
@@ -228,6 +215,7 @@ void hash_table_delete_entry(HashTable* hashtable, const char* key)
         }
 
         // Advance the pointers.
+        // Previous is now set to the current entry and the current entry advances to it's next.
         previous = entry;
         entry    = previous->next;
     }
@@ -235,6 +223,57 @@ void hash_table_delete_entry(HashTable* hashtable, const char* key)
 
 
 // Display all entries.
+void print_hash_table(HashTable* hashtable)
+{
+    // Iterate through each entry in the table.
+    for (int i = 0; i < hashtable->size; i++) {
+        Entry* entry = hashtable->entries[i];
+
+        // If there is no entry, just skip and do nothing.
+        if (entry == NULL)
+            continue;
+
+        // If there is an entry at that slot, iterate through all entries on the linked list and
+        // print each entry's key and value. Print the slot (i.e. the hash value).
+        printf(BLU "Slot[%d]:\n" RESET, i);
+        while (entry != NULL) {
+            printf("Key: %s, Value: %s\n", entry->key, entry->value);
+            entry = entry->next;
+        }
+    }
+}
 
 
 // Free memory of the entire hash table.
+void free_hash_table(HashTable* hashtable, bool verbose)
+{
+    // Iterate through each entry in the table.
+    for (int i = 0; i < hashtable->size; i++) {
+        Entry* entry = hashtable->entries[i];
+
+        // If there is no entry, just skip and do nothing.
+        if (entry == NULL)
+            continue;
+
+        // If there is an entry at that slot, iterate through all entries of the linked list and
+        // free memory one by one.
+        Entry* previous;
+        while (entry != NULL) {
+            // Pointer increment.
+            previous = entry;
+            entry    = previous->next;
+            // Printing out the entries we have free memory for.
+            if (verbose) {
+                printf(RED "Freeing memory at slot[%d] for key: %s, value: %s.\n" RESET, i,
+                       previous->key, previous->value);
+            }
+            free(previous->key);
+            free(previous->value);
+            free(previous);
+        }
+    }
+
+    // Free the memory for the entries array of the hashtable and the hashtable struct itself.
+    free(hashtable->entries);
+    free(hashtable);
+}
