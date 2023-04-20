@@ -264,8 +264,9 @@ void free_hash_table(HashTable* hashtable, bool verbose)
             entry    = previous->next;
             // Printing out the entries we have free memory for.
             if (verbose) {
-                printf(RED "Freeing memory at slot[%d] for key: %s, value: %s.\n" RESET, i,
-                       previous->key, previous->value);
+                printf(RED
+                       "Freeing memory at slot[%d] for key: %s, value: %s at address %p.\n" RESET,
+                       i, previous->key, previous->value, previous);
             }
             free(previous->key);
             free(previous->value);
